@@ -917,9 +917,8 @@ export default function Portfolio() {
                     src="/lucid-logo.png"
                     alt="Lucid Motors"
                     style={{
-                      width: "55%",
+                      width: "65%",
                       objectFit: "contain",
-                      padding: "0 10px",
                     }}
                   />
                 </div>
