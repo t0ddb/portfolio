@@ -594,6 +594,48 @@ export default function Portfolio() {
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #dde0ea; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #c0c4d4; }
+
+        @media (max-width: 768px) {
+          .side-nav {
+            display: none !important;
+          }
+          .main-content {
+            padding: 0 20px !important;
+          }
+          .hero-section {
+            min-height: 80vh !important;
+            padding-top: 60px !important;
+          }
+          .headshot-row {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 24px !important;
+          }
+          .headshot-row img {
+            width: 160px !important;
+            height: 160px !important;
+          }
+          .logo-bar {
+            max-width: 100% !important;
+          }
+          .logo-bar img {
+            width: 100% !important;
+          }
+          .about-buttons {
+            justify-content: center !important;
+          }
+          .about-buttons a {
+            flex: 1 !important;
+            width: auto !important;
+          }
+          .skills-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .contact-links {
+            max-width: 100% !important;
+          }
+        }
       `}</style>
 
       <div
@@ -610,6 +652,7 @@ export default function Portfolio() {
 
         {/* Side Nav */}
         <nav
+          className="side-nav"
           style={{
             position: "fixed",
             left: 28,
@@ -634,11 +677,12 @@ export default function Portfolio() {
         </nav>
 
         {/* Main Content */}
-        <main style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 0 140px", position: "relative", zIndex: 1 }}>
+        <main className="main-content" style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px 0 140px", position: "relative", zIndex: 1 }}>
           {/* Hero */}
           <section
             id="hero"
             ref={sectionRefs.hero}
+            className="hero-section"
             style={{
               minHeight: "calc(100vh - 70px)",
               display: "flex",
@@ -776,7 +820,7 @@ export default function Portfolio() {
             </h2>
 
             {/* Headshot + Bio row */}
-            <div style={{ display: "flex", gap: 32, alignItems: "flex-start", maxWidth: 700 }}>
+            <div className="headshot-row" style={{ display: "flex", gap: 32, alignItems: "flex-start", maxWidth: 700 }}>
               {d.headshot ? (
                 <img
                   src={d.headshot}
@@ -827,6 +871,7 @@ export default function Portfolio() {
                 Experience
               </span>
               <div
+                className="logo-bar"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -908,7 +953,7 @@ export default function Portfolio() {
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 12, marginTop: 28 }}>
+            <div className="about-buttons" style={{ display: "flex", gap: 12, marginTop: 28 }}>
               <a
                 href={`https://${d.contact.linkedin}`}
                 target="_blank"
@@ -1030,6 +1075,7 @@ export default function Portfolio() {
               Core Competencies
             </h2>
             <div
+              className="skills-grid"
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
@@ -1116,7 +1162,7 @@ export default function Portfolio() {
             >
               I'd love to hear from you.
             </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 400 }}>
+            <div className="contact-links" style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 400 }}>
               {[
                 { label: "LinkedIn", value: d.contact.linkedin, href: `https://${d.contact.linkedin}`, icon: "→" },
                 { label: "GitHub", value: d.contact.github, href: `https://${d.contact.github}`, icon: "→" },
