@@ -618,16 +618,6 @@ export default function Portfolio() {
           }
           .logo-bar {
             max-width: 100% !important;
-            flex-direction: column !important;
-            gap: 20px !important;
-            align-items: flex-start !important;
-          }
-          .logo-bar img {
-            width: auto !important;
-            max-height: 28px !important;
-          }
-          .logo-divider {
-            display: none !important;
           }
           .about-buttons {
             justify-content: center !important;
@@ -929,6 +919,7 @@ export default function Portfolio() {
                     style={{
                       width: "55%",
                       objectFit: "contain",
+                      padding: "0 10px",
                     }}
                   />
                 </div>
