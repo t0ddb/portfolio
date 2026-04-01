@@ -618,9 +618,16 @@ export default function Portfolio() {
           }
           .logo-bar {
             max-width: 100% !important;
+            flex-direction: column !important;
+            gap: 20px !important;
+            align-items: flex-start !important;
           }
           .logo-bar img {
-            width: 100% !important;
+            width: auto !important;
+            max-height: 28px !important;
+          }
+          .logo-divider {
+            display: none !important;
           }
           .about-buttons {
             justify-content: center !important;
@@ -901,7 +908,7 @@ export default function Portfolio() {
                   />
                 </div>
 
-                <div style={{ width: 1, height: 40, background: T.border, flexShrink: 0 }} />
+                <div className="logo-divider" style={{ width: 1, height: 40, background: T.border, flexShrink: 0 }} />
 
                 {/* Lucid */}
                 <div
@@ -926,7 +933,7 @@ export default function Portfolio() {
                   />
                 </div>
 
-                <div style={{ width: 1, height: 40, background: T.border, flexShrink: 0 }} />
+                <div className="logo-divider" style={{ width: 1, height: 40, background: T.border, flexShrink: 0 }} />
 
                 {/* Santa Clara University */}
                 <div
