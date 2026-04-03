@@ -11,7 +11,7 @@ const PORTFOLIO_DATA = {
   ],
   projects: [
     {
-      title: "Alpha Scanner",
+      title: "📡 Alpha Scanner",
       tags: ["Python", "Streamlit", "SQLite", "yfinance", "Plotly"],
       description:
         "A momentum breakout detection system that identifies when entire market sectors — not just individual stocks — are experiencing coordinated technical breakouts. Scores 165 tickers across 9 sectors on a 0–10 scale.",
@@ -24,7 +24,7 @@ const PORTFOLIO_DATA = {
       },
     },
     {
-      title: "Job Matcher Pipeline",
+      title: "🎯 Job Matcher Pipeline",
       tags: ["Python", "Claude API", "GitHub Actions", "REST APIs"],
       description:
         "An automated daily pipeline that searches multiple job APIs, scores listings against my profile using Claude AI, and delivers a curated email digest every morning. Runs on GitHub Actions for ~$1–2/month.",
@@ -37,7 +37,7 @@ const PORTFOLIO_DATA = {
       },
     },
     {
-      title: "Powder Hound",
+      title: "🏔️ Powder Hound",
       tags: ["Python", "Flask", "Leaflet.js", "Open-Meteo API", "Replit"],
       description:
         "A real-time snow forecast tracker for Western US ski resorts. Ranks ~40 resorts by expected snowfall, plots them on an interactive map with color-coded powder alerts, and filters by region. Vibecoded in about an hour.",
