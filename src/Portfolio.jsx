@@ -6,7 +6,7 @@ const PORTFOLIO_DATA = {
   tagline: "Powering GTM teams with systems and analytics.",
   headshot: "/headshot.jpg", // Replace with: "/headshot.jpg" after adding image to /public folder
   about: [
-    "I've spent 13+ years building the GTM infrastructure that revenue teams run on — forecasting, dashboards, CRM architecture, KPI frameworks. First at Tesla during the Model S and Model 3 era, then at Lucid as one of the earliest Sales hires, scaling systems, analytics, and planning from zero through IPO and $600M+.",
+    "I've spent 13+ years building the GTM infrastructure & strategy powering revenue teams — forecasting, dashboards, CRM architecture, KPI frameworks. First at Tesla during the Model S and Model 3 era, then at Lucid as one of the earliest Sales hires, scaling systems, analytics, and planning from zero through IPO and $600M+.",
     "Currently based in Oakland, exploring what AI automation can do for revenue operations.",
   ],
   projects: [
@@ -14,11 +14,11 @@ const PORTFOLIO_DATA = {
       title: "📡 Alpha Scanner",
       tags: ["Python", "Streamlit", "SQLite", "yfinance", "Plotly"],
       description:
-        "A momentum breakout detection system that identifies when entire market sectors — not just individual stocks — are experiencing coordinated technical breakouts. Scores 165 tickers across 9 sectors on a 0–10 scale.",
+        "A momentum breakout detection system that identifies when entire market sectors — not just individual stocks — are experiencing coordinated technical breakouts. Scores 150+ tickers across dozens of sectors on a 0–10 scale.",
       status: "In Progress",
       details: {
-        problem: "In early 2025, I watched AI infrastructure stocks break out in sequence — GPUs, then networking, then memory, then power. Each wave was visible in hindsight, but hard to catch in real time. Manually tracking when each sector rotates into favor across 165 tickers is impractical.",
-        approach: "Built a Python system that scores stocks daily using 7 weighted technical indicators (relative strength, Ichimoku Cloud, Chaikin Money Flow, rate of change, higher lows, dual-timeframe RS, ATR expansion). Started with 16 candidate indicators, backtested each against 3 years of data, and kept only the 7 with real predictive edge. A state machine monitors 31 subsectors for coordinated breakouts — when 50%+ of stocks in a subsector score hot, it enters the breakout pipeline.",
+        problem: "Over the past 2 years, I watched AI infrastructure stocks break out in sequence — GPUs, then networking, then memory, then power. Each wave was visible in hindsight, but hard to catch in real time. Manually tracking when each sector rotates into favor across hundreds of tickers is impractical.",
+        approach: "I built a Python system that scores stocks daily using 7 weighted technical indicators (relative strength, Ichimoku Cloud, Chaikin Money Flow, rate of change, higher lows, dual-timeframe RS, ATR expansion). Started with 16 candidate indicators, backtested each against 3 years of data, and kept only the 7 with real predictive edge. A state machine monitors 31 subsectors for coordinated breakouts.",
         results: "Backtesting confirmed monotonic alpha across score thresholds (scores ≥8 produce +18.4% alpha over 63 days). Confirmed subsector breakouts show +6.9% edge over baseline, and Revival signals show +12.5%. The system runs a Streamlit dashboard with three views and a daily email digest.",
         links: { github: "https://github.com/t0ddb/alpha-scanner", demo: "https://alphascanner.streamlit.app/" },
       },
