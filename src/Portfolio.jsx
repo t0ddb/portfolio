@@ -12,22 +12,34 @@ const PORTFOLIO_DATA = {
   projects: [
     {
       title: "📡 Alpha Scanner",
-      tags: ["Python", "Streamlit", "SQLite", "yfinance", "Plotly"],
+      hero: "/alpha-scanner-hero.jpg",
+      tags: ["Python", "Alpaca API", "GitHub Actions", "SQLite", "Streamlit"],
       description:
-        "A momentum breakout detection system that identifies when entire market sectors — not just individual stocks — are experiencing coordinated technical breakouts. Scores 150+ tickers across dozens of sectors on a 0–10 scale.",
-      status: "In Progress",
+        "An automated momentum trading system. Scores 180+ tickers daily against a 7-indicator signal and autonomously executes entries, exits, and stops on Alpaca.",
+      metrics: [
+        { value: "180+", label: "Tickers scored daily" },
+        { value: "Fully automated", label: "Entry, exit & stops" },
+        { value: "Sharpe 3.16", label: "Backtested strategy" },
+      ],
+      status: "Live",
       details: {
-        problem: "Over the past 2 years, I watched AI infrastructure stocks break out in sequence — GPUs, then networking, then memory, then power. Each wave was visible in hindsight, but hard to catch in real time. Manually tracking when each sector rotates into favor across hundreds of tickers is impractical.",
-        approach: "I built a Python system that scores stocks daily using 7 weighted technical indicators (relative strength, Ichimoku Cloud, Chaikin Money Flow, rate of change, higher lows, dual-timeframe RS, ATR expansion). Started with 16 candidate indicators, backtested each against 3 years of data, and kept only the 7 with real predictive edge. A state machine monitors 31 subsectors for coordinated breakouts.",
-        results: "Backtesting confirmed monotonic alpha across score thresholds (scores ≥8 produce +18.4% alpha over 63 days). Confirmed subsector breakouts show +6.9% edge over baseline, and Revival signals show +12.5%. The system runs a Streamlit dashboard with three views and a daily email digest.",
+        problem: "Over the past 2 years, I watched AI infrastructure stocks break out in sequence — GPUs, then networking, then memory, then power. Each wave was visible in hindsight but hard to catch in real time. A watchlist of 180+ tickers across 31 subsectors is too much to monitor manually — and even a good signal is worthless if execution still depends on me staring at a screen.",
+        approach: "Scores 180+ tickers daily against a 7-indicator momentum signal (chosen from 16 candidates via 3-year backtesting), then trades autonomously on Alpaca via GitHub Actions. The daily pipeline evaluates exits, filters new entries through a 3-day persistence rule, submits 3%-buffered limit orders with a 5% cash reserve, and attaches GTC stops at entry × 0.80. Every parameter — entry threshold, stop loss, max positions, order type — was chosen by backtest sweep.",
+        results: "The live config — Limit-3% orders + 5% cash floor + 20% stops — produced Sharpe 3.16, Sortino 4.88, and zero negative-cash days across a 4-way entry-mode backtest. Now running live on Alpaca with active positions protected by GTC stops. Every parameter was calibrated from backtest sweeps.",
         links: { github: "https://github.com/t0ddb/alpha-scanner", demo: "https://alphascanner.streamlit.app/" },
       },
     },
     {
       title: "🎯 Job Matcher Pipeline",
+      hero: "/job-matcher-hero.jpg",
       tags: ["Python", "Claude API", "GitHub Actions", "REST APIs"],
       description:
-        "An automated daily pipeline that searches multiple job APIs, scores listings against my profile using Claude AI, and delivers a curated email digest every morning. Runs on GitHub Actions for ~$1–2/month.",
+        "An automated daily pipeline that searches multiple job APIs, scores listings against my profile using Claude AI, and delivers a curated email digest every morning.",
+      metrics: [
+        { value: "3", label: "API sources" },
+        { value: "Claude-scored", label: "Daily matches" },
+        { value: "~$1/mo", label: "Infrastructure cost" },
+      ],
       status: "Completed",
       details: {
         problem: "Job searching across multiple boards is repetitive and time-consuming. Most listings aren't relevant, and the good ones get buried. I needed a system that would surface high-fit roles automatically, every day, without me logging into five different sites.",
@@ -38,9 +50,15 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "🏔️ Powder Hound",
+      hero: "/powder-hound-hero.jpg",
       tags: ["Python", "Flask", "Leaflet.js", "Open-Meteo API", "Replit"],
       description:
-        "A real-time snow forecast tracker for Western US ski resorts. Ranks ~40 resorts by expected snowfall, plots them on an interactive map with color-coded powder alerts, and filters by region. Vibecoded in about an hour.",
+        "A real-time snow forecast tracker for Western US ski resorts. Ranks resorts by expected snowfall and plots them on an interactive map with color-coded powder alerts.",
+      metrics: [
+        { value: "~40", label: "Resorts tracked" },
+        { value: "7-day", label: "Forecast horizon" },
+        { value: "1 hour", label: "Build time" },
+      ],
       status: "Completed",
       details: {
         problem: "Every skier asks the same question on a Wednesday: where's it going to dump this weekend? Most weather sites make you check resorts one by one. I wanted a single view that answered it instantly.",
@@ -84,6 +102,8 @@ const T = {
   blueLight: "rgba(10,102,194,0.08)",
   amber: "#b8923e",
   amberLight: "rgba(184,146,62,0.08)",
+  green: "#2d7a4b",                       // status = Live
+  greenLight: "rgba(45,122,75,0.1)",
 };
 
 const GridBackground = () => (
@@ -134,6 +154,7 @@ const StatusBadge = ({ status }) => {
   const colors = {
     Completed: { bg: T.warmLight, text: T.warm, dot: T.warm },
     "In Progress": { bg: T.blueLight, text: T.blue, dot: T.blue },
+    Live: { bg: T.greenLight, text: T.green, dot: T.green },
     Planned: { bg: T.amberLight, text: T.faint, dot: T.faint },
   };
   const c = colors[status] || colors.Planned;
@@ -159,7 +180,7 @@ const StatusBadge = ({ status }) => {
           height: 6,
           borderRadius: "50%",
           background: c.dot,
-          animation: status === "In Progress" ? "pulse 2s ease-in-out infinite" : "none",
+          animation: status === "In Progress" || status === "Live" ? "pulse 2s ease-in-out infinite" : "none",
         }}
       />
       {status}
@@ -235,7 +256,379 @@ const DetailLabel = ({ children }) => (
 
 const ProjectCard = ({ proj, defaultExpanded = false }) => {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const [heroPanProgress, setHeroPanProgress] = useState(0);
+  // heroPanScale normalizes pan speed across images with different aspect ratios.
+  // Without it, wider images pan several times faster than near-square ones because
+  // `background-position: 100%` is 100% of whatever overflow the image has after `cover`.
+  // With it, every card pans ~TARGET_PAN_PX of visible image movement across the full
+  // scroll range, so motion feels consistent regardless of the hero's aspect ratio.
+  const [heroPanScale, setHeroPanScale] = useState(1);
+  const cardRef = useRef(null);
+  const heroElemRef = useRef(null);
+  const hasHero = Boolean(proj.hero);
 
+  // Scroll-linked horizontal parallax for this card's hero image.
+  // Panning doesn't start until the card's top edge crosses 50% of the viewport,
+  // giving the viewer time to orient as the card enters from the bottom.
+  // Panning completes by the time the card has fully exited off the top.
+  useEffect(() => {
+    if (!hasHero) return;
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) return;
+
+    let rafId = null;
+    const update = () => {
+      rafId = null;
+      const el = cardRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      // Progress starts when rect.top crosses vh/2 (card top at middle of screen)
+      // and ends when rect.bottom crosses 0 (card has fully exited the top).
+      // Scroll distance of the pan = (vh/2) + rect.height.
+      const startRectTop = vh / 2;
+      const endRectTop = -rect.height;
+      const range = startRectTop - endRectTop; // = vh/2 + rect.height
+      const current = startRectTop - rect.top;
+      const p = Math.max(0, Math.min(1, current / range));
+      setHeroPanProgress(p);
+    };
+    const onScroll = () => {
+      if (rafId == null) rafId = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (rafId != null) cancelAnimationFrame(rafId);
+    };
+  }, [hasHero]);
+
+  // Measure hero container and image to compute heroPanScale (see comment on the state).
+  // Target: ~55px of visible image movement per card, regardless of image aspect ratio —
+  // calibrated to feel like the original Job Matcher pan speed.
+  useEffect(() => {
+    if (!hasHero) return;
+    const TARGET_PAN_PX = 70;
+
+    const img = new Image();
+    img.src = proj.hero;
+
+    let rafId = null;
+    const measure = () => {
+      rafId = null;
+      const el = heroElemRef.current;
+      if (!el || !img.complete || !img.naturalWidth || !img.naturalHeight) return;
+      const cw = el.offsetWidth;
+      const ch = el.offsetHeight;
+      if (!cw || !ch) return;
+      // Simulate `background-size: cover`: image is scaled so the container is fully covered.
+      const coverScale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
+      const renderedW = img.naturalWidth * coverScale;
+      const overflowPx = renderedW - cw;
+      if (overflowPx <= 0) {
+        setHeroPanScale(0); // no horizontal overflow — can't pan
+      } else {
+        setHeroPanScale(Math.min(1, TARGET_PAN_PX / overflowPx));
+      }
+    };
+    const onChange = () => {
+      if (rafId == null) rafId = requestAnimationFrame(measure);
+    };
+
+    img.onload = onChange;
+    if (img.complete) onChange();
+    window.addEventListener("resize", onChange);
+    return () => {
+      window.removeEventListener("resize", onChange);
+      if (rafId != null) cancelAnimationFrame(rafId);
+      img.onload = null;
+    };
+  }, [hasHero, proj.hero]);
+
+  const Header = () => (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 12,
+        flexWrap: "wrap",
+        gap: 10,
+      }}
+    >
+      <h3
+        style={{
+          fontFamily: "'Space Grotesk', sans-serif",
+          fontSize: 20,
+          fontWeight: 600,
+          color: T.text,
+          letterSpacing: "-0.01em",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          flexWrap: "wrap",
+        }}
+      >
+        {proj.title}
+        <span
+          className="details-pill"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+            padding: "2px 10px",
+            borderRadius: 6,
+            background: T.surface,
+            border: `1px solid ${T.border}`,
+            fontSize: 11,
+            fontFamily: "'JetBrains Mono', monospace",
+            letterSpacing: "0.04em",
+            color: T.faint,
+            transition: "all 0.25s ease",
+            flexShrink: 0,
+          }}
+        >
+          {expanded ? "Less ↑" : "Details ↓"}
+        </span>
+      </h3>
+      <StatusBadge status={proj.status} />
+    </div>
+  );
+
+  const Description = () => (
+    <p
+      style={{
+        fontSize: 15,
+        lineHeight: 1.7,
+        color: T.muted,
+        fontWeight: 400,
+        marginBottom: proj.metrics ? 20 : 18,
+      }}
+    >
+      {proj.description}
+    </p>
+  );
+
+  const Metrics = () =>
+    proj.metrics ? (
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 28, marginBottom: 22 }}>
+        {proj.metrics.map((m, i) => (
+          <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <div
+              style={{
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: 20,
+                fontWeight: 600,
+                color: T.text,
+                letterSpacing: "-0.01em",
+                lineHeight: 1.1,
+              }}
+            >
+              {m.value}
+            </div>
+            <div
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 10,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: T.faint,
+              }}
+            >
+              {m.label}
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : null;
+
+  const Footer = () => (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+      {proj.details?.links?.github && (
+        <a
+          href={proj.details.links.github}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            letterSpacing: "0.04em",
+            padding: "3px 12px",
+            borderRadius: 6,
+            background: T.accentLight,
+            border: `1px solid ${T.accentBorder}`,
+            color: T.accent,
+            textDecoration: "none",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = T.accentMid;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = T.accentLight;
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          GitHub
+        </a>
+      )}
+      {proj.details?.links?.demo && (
+        <a
+          href={proj.details.links.demo}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            letterSpacing: "0.04em",
+            padding: "3px 12px",
+            borderRadius: 6,
+            background: T.warmLight,
+            border: `1px solid ${T.warmBorder}`,
+            color: T.warm,
+            textDecoration: "none",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = T.warmMid;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = T.warmLight;
+          }}
+        >
+          Live Demo →
+        </a>
+      )}
+      {(proj.details?.links?.github || proj.details?.links?.demo) && (
+        <div style={{ width: 1, height: 18, background: T.border, flexShrink: 0 }} />
+      )}
+      {proj.tags.map((t) => (
+        <Tag key={t} label={t} />
+      ))}
+    </div>
+  );
+
+  const Expandable = () => (
+    <div
+      style={{
+        overflow: "hidden",
+        maxHeight: expanded ? 1200 : 0,
+        opacity: expanded ? 1 : 0,
+        transition: "max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease",
+      }}
+    >
+      <div
+        style={{
+          paddingTop: 24,
+          marginTop: 20,
+          borderTop: `1px solid ${T.border}`,
+        }}
+      >
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
+          {proj.details?.problem && (
+            <div>
+              <DetailLabel>The Problem</DetailLabel>
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: T.muted, fontWeight: 400 }}>
+                {proj.details.problem}
+              </p>
+            </div>
+          )}
+          {proj.details?.approach && (
+            <div>
+              <DetailLabel>Approach</DetailLabel>
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: T.muted, fontWeight: 400 }}>
+                {proj.details.approach}
+              </p>
+            </div>
+          )}
+          {proj.details?.results && (
+            <div>
+              <DetailLabel>Results</DetailLabel>
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: T.muted, fontWeight: 400 }}>
+                {proj.details.results}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // --- Hero image layout (left image, right content) ---
+  if (hasHero) {
+    return (
+      <div
+        ref={cardRef}
+        className="project-card project-card--with-hero"
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          borderRadius: 12,
+          background: T.cardBg,
+          border: `1px solid ${expanded ? T.accentBorder : T.border}`,
+          cursor: "pointer",
+          transition: "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          className="project-card__inner"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "42% 1fr",
+            minHeight: 340,
+          }}
+        >
+          <div
+            ref={heroElemRef}
+            className="project-card__hero"
+            style={{
+              backgroundImage: `url(${proj.hero})`,
+              backgroundSize: "cover",
+              backgroundPosition: `${(heroPanProgress * heroPanScale * 100).toFixed(2)}% top`,
+              backgroundColor: "#0a0f1c",
+              borderRight: `1px solid ${T.border}`,
+            }}
+          />
+          <div
+            className="project-card__body"
+            style={{
+              padding: "28px 32px 24px",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Header />
+            <Description />
+            <Metrics />
+            <div style={{ marginTop: "auto" }}>
+              <Footer />
+            </div>
+          </div>
+        </div>
+        <div style={{ padding: "0 32px 24px" }}>
+          <Expandable />
+        </div>
+      </div>
+    );
+  }
+
+  // --- Text-only fallback ---
   return (
     <div
       className="project-card"
@@ -249,185 +642,11 @@ const ProjectCard = ({ proj, defaultExpanded = false }) => {
         transition: "all 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 14,
-          flexWrap: "wrap",
-          gap: 10,
-        }}
-      >
-        <h3
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: 20,
-            fontWeight: 600,
-            color: T.text,
-            letterSpacing: "-0.01em",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          {proj.title}
-          <span
-            className="details-pill"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              padding: "2px 10px",
-              borderRadius: 6,
-              background: T.surface,
-              border: `1px solid ${T.border}`,
-              fontSize: 11,
-              fontFamily: "'JetBrains Mono', monospace",
-              letterSpacing: "0.04em",
-              color: T.faint,
-              transition: "all 0.25s ease",
-              flexShrink: 0,
-            }}
-          >
-            {expanded ? "Less ↑" : "Details ↓"}
-          </span>
-        </h3>
-        <StatusBadge status={proj.status} />
-      </div>
-      <p
-        style={{
-          fontSize: 15,
-          lineHeight: 1.7,
-          color: T.muted,
-          fontWeight: 400,
-          marginBottom: 18,
-        }}
-      >
-        {proj.description}
-      </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-        {proj.details?.links?.github && (
-          <>
-            <a
-              href={proj.details.links.github}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                letterSpacing: "0.04em",
-                padding: "3px 12px",
-                borderRadius: 6,
-                background: T.accentLight,
-                border: `1px solid ${T.accentBorder}`,
-                color: T.accent,
-                textDecoration: "none",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = T.accentMid;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = T.accentLight;
-              }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-              </svg>
-              GitHub
-            </a>
-          </>
-        )}
-        {proj.details?.links?.demo && (
-          <>
-            <a
-              href={proj.details.links.demo}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 11,
-                letterSpacing: "0.04em",
-                padding: "3px 12px",
-                borderRadius: 6,
-                background: T.warmLight,
-                border: `1px solid ${T.warmBorder}`,
-                color: T.warm,
-                textDecoration: "none",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = T.warmMid;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = T.warmLight;
-              }}
-            >
-              Live Demo →
-            </a>
-          </>
-        )}
-        {(proj.details?.links?.github || proj.details?.links?.demo) && (
-          <div style={{ width: 1, height: 18, background: T.border, flexShrink: 0 }} />
-        )}
-        {proj.tags.map((t) => (
-          <Tag key={t} label={t} />
-        ))}
-      </div>
-
-      {/* Expandable Details */}
-      <div
-        style={{
-          overflow: "hidden",
-          maxHeight: expanded ? 1000 : 0,
-          opacity: expanded ? 1 : 0,
-          transition: "max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease",
-        }}
-      >
-        <div
-          style={{
-            paddingTop: 24,
-            marginTop: 20,
-            borderTop: `1px solid ${T.border}`,
-          }}
-        >
-          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
-            {proj.details?.problem && (
-              <div>
-                <DetailLabel>The Problem</DetailLabel>
-                <p style={{ fontSize: 14, lineHeight: 1.7, color: T.muted, fontWeight: 400 }}>
-                  {proj.details.problem}
-                </p>
-              </div>
-            )}
-            {proj.details?.approach && (
-              <div>
-                <DetailLabel>Approach</DetailLabel>
-                <p style={{ fontSize: 14, lineHeight: 1.7, color: T.muted, fontWeight: 400 }}>
-                  {proj.details.approach}
-                </p>
-              </div>
-            )}
-            {proj.details?.results && (
-              <div>
-                <DetailLabel>Results</DetailLabel>
-                <p style={{ fontSize: 14, lineHeight: 1.7, color: T.muted, fontWeight: 400 }}>
-                  {proj.details.results}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <Header />
+      <Description />
+      <Metrics />
+      <Footer />
+      <Expandable />
     </div>
   );
 };
@@ -631,6 +850,18 @@ export default function Portfolio() {
           }
           .contact-links {
             max-width: 100% !important;
+          }
+          .project-card--with-hero .project-card__inner {
+            grid-template-columns: 1fr !important;
+            min-height: 0 !important;
+          }
+          .project-card--with-hero .project-card__hero {
+            aspect-ratio: 16 / 9 !important;
+            border-right: none !important;
+            border-bottom: 1px solid #e0dcd5 !important;
+          }
+          .project-card--with-hero .project-card__body {
+            padding: 24px 22px !important;
           }
         }
       `}</style>
